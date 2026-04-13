@@ -1,14 +1,14 @@
 from flask import Flask
 from database import init_db
 from routes.auth import auth_bp
-
+from routes.login import login_bp
 # Create Flask application
 app = Flask(__name__)
 
 # Register the authentication Blueprint
 # This makes all routes from auth.py available in our app
 app.register_blueprint(auth_bp)
-
+app.register_blueprint(login_bp)
 @app.route('/')
 def home():
     return "Healthcare API is running!"
