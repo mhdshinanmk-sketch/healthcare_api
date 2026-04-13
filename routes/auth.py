@@ -60,49 +60,49 @@ def register():
         return jsonify({'error': 'Registration failed', 'details': str(e)}), 500
 
 
-# LOGIN ENDPOINT
-@auth_bp.route('/auth/login', methods=['POST'])
-def login():
-    """
-    Login an existing user.
-    Expects JSON data: {"email": "john@example.com", "password": "securepass123"}
-    """
-    # Get JSON data from the request body
-    data = request.get_json()
+# # LOGIN ENDPOINT
+# @auth_bp.route('/auth/login', methods=['POST'])
+# def login():
+#     """
+#     Login an existing user.
+#     Expects JSON data: {"email": "john@example.com", "password": "securepass123"}
+#     """
+#     # Get JSON data from the request body
+#     data = request.get_json()
 
-    # Validate that all required fields are present
-    if not data or not data.get('email') or not data.get('password'):
-        return jsonify({'error': 'Email and password are required'}), 400
+#     # Validate that all required fields are present
+#     if not data or not data.get('email') or not data.get('password'):
+#         return jsonify({'error': 'Email and password are required'}), 400
 
-    email = data['email']
-    password = data['password']
+#     email = data['email']
+#     password = data['password']
 
-    # Connect to the database
-    conn = get_db_connection()
+#     # Connect to the database
+#     conn = get_db_connection()
 
-    # Find the user by email
-    user = conn.execute(
-        'SELECT * FROM users WHERE email = ?',
-        (email,)
-    ).fetchone()  # fetchone() returns one row or None if not found
+#     # Find the user by email
+#     user = conn.execute(
+#         'SELECT * FROM users WHERE email = ?',
+#         (email,)
+#     ).fetchone()  # fetchone() returns one row or None if not found
 
-    conn.close()
+#     conn.close()
 
-    # Check if user exists
-    if user is None:
-        return jsonify({'error': 'Invalid email or password'}), 401  # 401 means "Unauthorized"
+#     # Check if user exists
+#     if user is None:
+#         return jsonify({'error': 'Invalid email or password'}), 401  # 401 means "Unauthorized"
 
-    # Check if password matches
-    # check_password_hash compares the plain password with the hashed password
-    if not check_password_hash(user['password'], password):
-        return jsonify({'error': 'Invalid email or password'}), 401
+#     # Check if password matches
+#     # check_password_hash compares the plain password with the hashed password
+#     if not check_password_hash(user['password'], password):
+#         return jsonify({'error': 'Invalid email or password'}), 401
 
-    # If everything is correct, return success response
-    return jsonify({
-        'message': 'Login successful!',
-        'user': {
-            'id': user['id'],
-            'name': user['name'],
-            'email': user['email']
-        }
-    }), 200  # 200 means "OK"
+#     # If everything is correct, return success response
+#     return jsonify({
+#         'message': 'Login successful!',
+#         'user': {
+#             'id': user['id'],
+#             'name': user['name'],
+#             'email': user['email']
+#         }
+#     }), 200  # 200 means "OK"
