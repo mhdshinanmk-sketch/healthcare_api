@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from werkzeug.security import check_password_hash
 from database import get_db_connection
+from utils.jwt_helper import generate_token
 
 # Create Blueprint
 login_bp = Blueprint('login', __name__)
@@ -21,7 +22,7 @@ def login():
 
     user = conn.execute(
         "SELECT * FROM users WHERE email = ?",
-        
+
         (email,)
     ).fetchone()
 
@@ -32,12 +33,17 @@ def login():
 
     if not check_password_hash(user["password"], password):
         return jsonify({"message": "Invalid password"}), 401
+    token = generate_token(user)
 
     return jsonify({
         "message": "Login successful",
-        "user": {
+        "token": token,
+         "user": {
             "id": user["id"],
             "name": user["name"],
             "email": user["email"]
         }
+
     }), 200
+
+ 

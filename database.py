@@ -58,7 +58,17 @@ def init_db():
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     ''')
-
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS appointments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_id INTEGER NOT NULL,
+            doctor_name TEXT NOT NULL,
+            date TEXT NOT NULL,
+            time TEXT NOT NULL,
+            status TEXT DEFAULT 'scheduled',
+            FOREIGN KEY (patient_id) REFERENCES patients(id)
+        )
+    ''')
     # Save changes
     conn.commit()
 

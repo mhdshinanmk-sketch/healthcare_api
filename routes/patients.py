@@ -1,11 +1,12 @@
 from flask import Blueprint, request, jsonify
 from database import get_db_connection
-
+from utils.auth_middleware import token_required
 # Create Blueprint
 patients_bp = Blueprint('patients', __name__)
 
 # 1. ADD PATIENT
 @patients_bp.route('/patients', methods=['POST'])
+@token_required
 def add_patient():
 
     data = request.json
@@ -34,6 +35,7 @@ def add_patient():
 
 # 2. GET ALL PATIENTS
 @patients_bp.route('/patients', methods=['GET'])
+@token_required
 def get_patients():
 
     conn = get_db_connection()
@@ -51,6 +53,7 @@ def get_patients():
 
 # 3. GET SINGLE PATIENT
 @patients_bp.route('/patients/<int:id>', methods=['GET'])
+@token_required
 def get_patient(id):
 
     conn = get_db_connection()
@@ -70,6 +73,7 @@ def get_patient(id):
 
 # 4. UPDATE PATIENT
 @patients_bp.route('/patients/<int:id>', methods=['PUT'])
+@token_required
 def update_patient(id):
     data = request.json
 
@@ -131,6 +135,7 @@ def update_patient(id):
 
 # 5. DELETE PATIENT
 @patients_bp.route('/patients/<int:id>', methods=['DELETE'])
+@token_required
 def delete_patient(id):
 
     conn = get_db_connection()

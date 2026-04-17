@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify
 from database import get_db_connection
+from utils.auth_middleware import token_required
+
 
 # Create Blueprint
 profile_bp = Blueprint('profile', __name__)
@@ -45,6 +47,7 @@ profile_bp = Blueprint('profile', __name__)
 #     return jsonify(user_data), 200
 
 @profile_bp.route('/auth/profile', methods=['POST'])
+@token_required
 def get_profile():
 
     data = request.json
