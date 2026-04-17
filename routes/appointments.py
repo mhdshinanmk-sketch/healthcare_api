@@ -1,10 +1,12 @@
 from flask import Blueprint, request, jsonify
 from database import get_db_connection
+from utils.auth_middleware import token_required
 
 appointments_bp = Blueprint('appointments', __name__)
 
 # 1. CREATE APPOINTMENT
 @appointments_bp.route('/appointments', methods=['POST'])
+@token_required
 def create_appointment():
 
     data = request.json
@@ -42,6 +44,7 @@ def create_appointment():
 
 # 2. GET ALL APPOINTMENTS
 @appointments_bp.route('/appointments', methods=['GET'])
+@token_required
 def get_appointments():
 
     conn = get_db_connection()
@@ -57,6 +60,7 @@ def get_appointments():
 
 # 3. GET APPOINTMENTS BY PATIENT
 @appointments_bp.route('/appointments/patient/<int:id>', methods=['GET'])
+@token_required
 def get_appointments_by_patient(id):
 
     conn = get_db_connection()
@@ -73,6 +77,7 @@ def get_appointments_by_patient(id):
 
 # 4. UPDATE APPOINTMENT STATUS
 @appointments_bp.route('/appointments/<int:id>', methods=['PUT'])
+@token_required
 def update_appointment(id):
 
     data = request.json
@@ -105,6 +110,7 @@ def update_appointment(id):
 
 # 5. DELETE APPOINTMENT
 @appointments_bp.route('/appointments/<int:id>', methods=['DELETE'])
+@token_required
 def delete_appointment(id):
 
     conn = get_db_connection()

@@ -1,11 +1,13 @@
 from flask import Blueprint, request, jsonify
 from database import get_db_connection
+from utils.auth_middleware import token_required
 
 # Create Blueprint
 users_bp = Blueprint('users', __name__)
 
 # 1. GET ALL USERS
 @users_bp.route('/users', methods=['GET'])
+@token_required
 def get_users():
 
     conn = get_db_connection()
@@ -24,6 +26,7 @@ def get_users():
 
 # 2. GET SINGLE USER
 @users_bp.route('/users/<int:id>', methods=['GET'])
+@token_required
 def get_user(id):
 
     conn = get_db_connection()
@@ -43,6 +46,7 @@ def get_user(id):
 
 # 3. UPDATE USER
 @users_bp.route('/users/<int:id>', methods=['PUT'])
+@token_required
 def update_user(id):
 
     data = request.json
@@ -78,6 +82,7 @@ def update_user(id):
 
 # 4. DELETE USER
 @users_bp.route('/users/<int:id>', methods=['DELETE'])
+@token_required
 def delete_user(id):
 
     conn = get_db_connection()
