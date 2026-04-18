@@ -12,16 +12,16 @@ def create_appointment():
     data = request.json
 
     patient_id = data.get('patient_id')
-    doctor_name = data.get('doctor_name')
+    doctor_id = data.get('doctor_id')
     date = data.get('date')
     time = data.get('time')
 
-    if not patient_id or not doctor_name or not date or not time:
+    if not patient_id or not doctor_id or not date or not time:
         return jsonify({"message": "Missing required fields"}), 400
 
     conn = get_db_connection()
 
-    # Check if patient exists
+    # Check patient
     patient = conn.execute(
         "SELECT * FROM patients WHERE id = ?",
         (patient_id,)
@@ -31,16 +31,25 @@ def create_appointment():
         conn.close()
         return jsonify({"message": "Patient not found"}), 404
 
+    # ✅ NEW: Check doctor
+    doctor = conn.execute(
+        "SELECT * FROM doctors WHERE id = ?",
+        (doctor_id,)
+    ).fetchone()
+
+    if doctor is None:
+        conn.close()
+        return jsonify({"message": "Doctor not found"}), 404
+
     conn.execute(
-        "INSERT INTO appointments (patient_id, doctor_name, date, time) VALUES (?, ?, ?, ?)",
-        (patient_id, doctor_name, date, time)
+        "INSERT INTO appointments (patient_id, doctor_id, date, time) VALUES (?, ?, ?, ?)",
+        (patient_id, doctor_id, date, time)
     )
 
     conn.commit()
     conn.close()
 
     return jsonify({"message": "Appointment created successfully"}), 201
-
 
 # 2. GET ALL APPOINTMENTS
 @appointments_bp.route('/appointments', methods=['GET'])

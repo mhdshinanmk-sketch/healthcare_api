@@ -59,14 +59,25 @@ def init_db():
         )
     ''')
     conn.execute('''
-        CREATE TABLE IF NOT EXISTS appointments (
+            CREATE TABLE IF NOT EXISTS appointments (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             patient_id INTEGER NOT NULL,
-            doctor_name TEXT NOT NULL,
+            doctor_id INTEGER NOT NULL,
             date TEXT NOT NULL,
             time TEXT NOT NULL,
             status TEXT DEFAULT 'scheduled',
-            FOREIGN KEY (patient_id) REFERENCES patients(id)
+            FOREIGN KEY (patient_id) REFERENCES patients(id),
+            FOREIGN KEY (doctor_id) REFERENCES doctors(id)
+        );
+    ''')
+
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS doctors (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            specialization TEXT NOT NULL,
+            phone TEXT,
+            email TEXT UNIQUE
         )
     ''')
     # Save changes

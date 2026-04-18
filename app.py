@@ -6,6 +6,7 @@ from routes.profile import profile_bp
 from routes.users import users_bp
 from routes.patients import patients_bp
 from routes.appointments import appointments_bp
+from routes.doctors import doctors_bp
 # Create Flask application
 app = Flask(__name__)
 
@@ -17,6 +18,7 @@ app.register_blueprint(profile_bp)
 app.register_blueprint(users_bp)
 app.register_blueprint(patients_bp)
 app.register_blueprint(appointments_bp)
+app.register_blueprint(doctors_bp)
 @app.route('/')
 def home():
     return "Healthcare API is running!"
