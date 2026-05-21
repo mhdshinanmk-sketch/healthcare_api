@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctors - Healthcare Management</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar">
+            <h1>Healthcare Management</h1>
+            <div class="nav-links">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="patients.html">Patients</a>
+                <a href="appointments.html">Appointments</a>
+                <a href="doctors.html" class="active">Doctors</a>
+                <span id="userName"></span>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </nav>
+
+        <div class="dashboard-container">
+            <div class="action-bar">
+                <h2>Doctors Management</h2>
+                <button class="btn btn-small" onclick="openAddModal()">Add Doctor</button>
+            </div>
+
+            <div id="loadingDoctors" class="loading">Loading doctors...</div>
+            <div id="doctorsTable"></div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="doctorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add Doctor</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="doctorForm" onsubmit="handleSubmit(event)">
+                <input type="hidden" id="doctorId">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="doctorName" required>
+                </div>
+                <div class="form-group">
+                    <label>Specialization</label>
+                    <input type="text" id="doctorSpecialization" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="tel" id="doctorPhone">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="doctorEmail">
+                </div>
+                <button type="submit" class="btn">Save Doctor</button>
+            </form>
+            <div id="modalMessage" class="message"></div>
+        </div>
+    </div>
+
+    <script src="../js/auth.js"></script>
+    <script>
+        checkAuth();
+        document.getElementById('userName').textContent = localStorage.getItem('userName');
+
+        let editingDoctorId = null;
+
+        async function loadDoctors() {
+            try {
+                const response = await fetch(`${API_URL}/doctors`, {
+                    headers: getAuthHeaders()
+                });
+
+                const data = await response.json();
+                document.getElementById('loadingDoctors').style.display = 'none';
+
+                if (response.ok && data.length > 0) {
+                    displayDoctors(data);
+                } else {
+                    document.getElementById('doctorsTable').innerHTML = '<div class="empty-state">No doctors found. Add your first doctor!</div>';
+                }
+            } catch (error) {
+                document.getElementById('loadingDoctors').style.display = 'none';
+                document.getElementById('doctorsTable').innerHTML = '<div class="message error">Error loading doctors</div>';
+            }
+        }
+
+        function displayDoctors(doctors) {
+            const table = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Specialization</th>
+                            <th>Phone</th>
+                            <th>Email</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${doctors.map(doctor => `
+                            <tr>
+                                <td>${doctor.id}</td>
+                                <td>${doctor.name}</td>
+                                <td><span style="padding: 4px 8px; background: #667eea; border-radius: 4px; color: white; font-size: 12px;">${doctor.specialization}</span></td>
+                                <td>${doctor.phone || 'N/A'}</td>
+                                <td>${doctor.email || 'N/A'}</td>
+                                <td class="action-buttons">
+                                    <button class="btn btn-secondary btn-icon" onclick="editDoctor(${doctor.id})">Edit</button>
+                                    <button class="btn btn-danger btn-icon" onclick="deleteDoctor(${doctor.id})">Delete</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('doctorsTable').innerHTML = table;
+        }
+
+        function openAddModal() {
+            editingDoctorId = null;
+            document.getElementById('modalTitle').textContent = 'Add Doctor';
+            document.getElementById('doctorForm').reset();
+            document.getElementById('doctorId').value = '';
+            document.getElementById('doctorModal').classList.add('active');
+        }
+
+        async function editDoctor(id) {
+            try {
+                const response = await fetch(`${API_URL}/doctors/${id}`, {
+                    headers: getAuthHeaders()
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    editingDoctorId = id;
+                    document.getElementById('modalTitle').textContent = 'Edit Doctor';
+                    document.getElementById('doctorId').value = id;
+                    document.getElementById('doctorName').value = data.name;
+                    document.getElementById('doctorSpecialization').value = data.specialization;
+                    document.getElementById('doctorPhone').value = data.phone || '';
+                    document.getElementById('doctorEmail').value = data.email || '';
+                    document.getElementById('doctorModal').classList.add('active');
+                }
+            } catch (error) {
+                alert('Error loading doctor data');
+            }
+        }
+
+        async function handleSubmit(event) {
+            event.preventDefault();
+
+            const doctorData = {
+                name: document.getElementById('doctorName').value,
+                specialization: document.getElementById('doctorSpecialization').value,
+                phone: document.getElementById('doctorPhone').value,
+                email: document.getElementById('doctorEmail').value
+            };
+
+            try {
+                let response;
+                if (editingDoctorId) {
+                    response = await fetch(`${API_URL}/doctors/${editingDoctorId}`, {
+                        method: 'PUT',
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify(doctorData)
+                    });
+                } else {
+                    response = await fetch(`${API_URL}/doctors`, {
+                        method: 'POST',
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify(doctorData)
+                    });
+                }
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    closeModal();
+                    loadDoctors();
+                } else {
+                    document.getElementById('modalMessage').textContent = data.message || 'Operation failed';
+                    document.getElementById('modalMessage').className = 'message error';
+                }
+            } catch (error) {
+                document.getElementById('modalMessage').textContent = 'Error connecting to server';
+                document.getElementById('modalMessage').className = 'message error';
+            }
+        }
+
+        async function deleteDoctor(id) {
+            if (!confirm('Are you sure you want to delete this doctor?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/doctors/${id}`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+
+                if (response.ok) {
+                    loadDoctors();
+                } else {
+                    alert('Failed to delete doctor');
+                }
+            } catch (error) {
+                alert('Error connecting to server');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('doctorModal').classList.remove('active');
+            document.getElementById('doctorForm').reset();
+            document.getElementById('modalMessage').textContent = '';
+        }
+
+        // Load doctors on page load
+        loadDoctors();
+    </script>
+</body>
+</html>

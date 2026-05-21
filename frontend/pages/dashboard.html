@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Healthcare Management</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar">
+            <h1>Healthcare Management</h1>
+            <div class="nav-links">
+                <a href="dashboard.html" class="active">Dashboard</a>
+                <a href="patients.html">Patients</a>
+                <a href="appointments.html">Appointments</a>
+                <a href="doctors.html">Doctors</a>
+                <span id="userName"></span>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </nav>
+
+        <div class="dashboard-container">
+            <h2>Welcome to Healthcare Management System</h2>
+            <p>Select a section from the navigation menu to manage your healthcare data.</p>
+
+            <div style="margin-top: 50px;">
+                <h3>Quick Access</h3>
+                <div class="quick-links">
+                    <a href="patients.html" class="quick-link-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <h3>👥 Patients</h3>
+                        <p>Manage patient records and medical history</p>
+                    </a>
+                    <a href="appointments.html" class="quick-link-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <h3>📅 Appointments</h3>
+                        <p>Schedule and manage appointments</p>
+                    </a>
+                    <a href="doctors.html" class="quick-link-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <h3>👨‍⚕️ Doctors</h3>
+                        <p>View and manage doctors directory</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/auth.js"></script>
+    <script>
+        checkAuth();
+        document.getElementById('userName').textContent = localStorage.getItem('userName');
+    </script>
+</body>
+</html>

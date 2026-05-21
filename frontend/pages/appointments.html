@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointments - Healthcare Management</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar">
+            <h1>Healthcare Management</h1>
+            <div class="nav-links">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="patients.html">Patients</a>
+                <a href="appointments.html" class="active">Appointments</a>
+                <a href="doctors.html">Doctors</a>
+                <span id="userName"></span>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </nav>
+
+        <div class="dashboard-container">
+            <div class="action-bar">
+                <h2>Appointments Management</h2>
+                <button class="btn btn-small" onclick="openAddModal()">Schedule Appointment</button>
+            </div>
+
+            <div id="loadingAppointments" class="loading">Loading appointments...</div>
+            <div id="appointmentsTable"></div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="appointmentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Schedule Appointment</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="appointmentForm" onsubmit="handleSubmit(event)">
+                <input type="hidden" id="appointmentId">
+                <div class="form-group">
+                    <label>Patient</label>
+                    <select id="patientId" required>
+                        <option value="">Select Patient</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Doctor</label>
+                    <select id="doctorId" required>
+                        <option value="">Select Doctor</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="appointmentDate" required>
+                </div>
+                <div class="form-group">
+                    <label>Time</label>
+                    <input type="time" id="appointmentTime" required>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="appointmentStatus" required>
+                        <option value="scheduled">Scheduled</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn">Save Appointment</button>
+            </form>
+            <div id="modalMessage" class="message"></div>
+        </div>
+    </div>
+
+    <script src="../js/auth.js"></script>
+    <script>
+        checkAuth();
+        document.getElementById('userName').textContent = localStorage.getItem('userName');
+
+        let editingAppointmentId = null;
+        let patients = [];
+        let doctors = [];
+
+        async function loadData() {
+            await Promise.all([loadPatients(), loadDoctors()]);
+            await loadAppointments();
+        }
+
+        async function loadPatients() {
+            try {
+                const response = await fetch(`${API_URL}/patients`, {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    patients = data.patients || data || [];
+                    populatePatientSelect();
+                }
+            } catch (error) {
+                console.error('Error loading patients:', error);
+            }
+        }
+
+        async function loadDoctors() {
+            try {
+                const response = await fetch(`${API_URL}/doctors`, {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    // API returns array directly, not wrapped in {doctors: [...]}
+                    doctors = Array.isArray(data) ? data : (data.doctors || []);
+                    populateDoctorSelect();
+                }
+            } catch (error) {
+                console.error('Error loading doctors:', error);
+            }
+        }
+
+        function populatePatientSelect() {
+            const select = document.getElementById('patientId');
+            select.innerHTML = '<option value="">Select Patient</option>';
+            patients.forEach(patient => {
+                select.innerHTML += `<option value="${patient.id}">${patient.name}</option>`;
+            });
+        }
+
+        function populateDoctorSelect() {
+            const select = document.getElementById('doctorId');
+            select.innerHTML = '<option value="">Select Doctor</option>';
+            doctors.forEach(doctor => {
+                select.innerHTML += `<option value="${doctor.id}">${doctor.name} (${doctor.specialization})</option>`;
+            });
+        }
+
+        async function loadAppointments() {
+            try {
+                const response = await fetch(`${API_URL}/appointments`, {
+                    headers: getAuthHeaders()
+                });
+
+                const data = await response.json();
+                document.getElementById('loadingAppointments').style.display = 'none';
+
+                // Handle both array response and {appointments: [...]} response
+                const appointmentsList = Array.isArray(data) ? data : (data.appointments || []);
+
+                if (response.ok && appointmentsList.length > 0) {
+                    displayAppointments(appointmentsList);
+                } else {
+                    document.getElementById('appointmentsTable').innerHTML = '<div class="empty-state">No appointments found. Schedule your first appointment!</div>';
+                }
+            } catch (error) {
+                document.getElementById('loadingAppointments').style.display = 'none';
+                document.getElementById('appointmentsTable').innerHTML = '<div class="message error">Error loading appointments</div>';
+            }
+        }
+
+        function getPatientName(patientId) {
+            const patient = patients.find(p => p.id === patientId);
+            return patient ? patient.name : 'Unknown';
+        }
+
+        function getDoctorName(doctorId) {
+            const doctor = doctors.find(d => d.id === doctorId);
+            return doctor ? `${doctor.name} (${doctor.specialization})` : 'Unknown';
+        }
+
+        function displayAppointments(appointments) {
+            const table = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Patient</th>
+                            <th>Doctor</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${appointments.map(appointment => `
+                            <tr>
+                                <td>${appointment.id}</td>
+                                <td>${getPatientName(appointment.patient_id)}</td>
+                                <td>${getDoctorName(appointment.doctor_id)}</td>
+                                <td>${appointment.date}</td>
+                                <td>${appointment.time}</td>
+                                <td><span style="padding: 4px 8px; background: ${getStatusColor(appointment.status)}; border-radius: 4px; color: white; font-size: 12px;">${appointment.status}</span></td>
+                                <td class="action-buttons">
+                                    <button class="btn btn-secondary btn-icon" onclick="editAppointment(${appointment.id})">Edit</button>
+                                    <button class="btn btn-danger btn-icon" onclick="deleteAppointment(${appointment.id})">Delete</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('appointmentsTable').innerHTML = table;
+        }
+
+        function getStatusColor(status) {
+            switch(status) {
+                case 'scheduled': return '#667eea';
+                case 'completed': return '#28a745';
+                case 'cancelled': return '#dc3545';
+                default: return '#6c757d';
+            }
+        }
+
+        function openAddModal() {
+            editingAppointmentId = null;
+            document.getElementById('modalTitle').textContent = 'Schedule Appointment';
+            document.getElementById('appointmentForm').reset();
+            document.getElementById('appointmentId').value = '';
+            document.getElementById('appointmentStatus').value = 'scheduled';
+            document.getElementById('appointmentModal').classList.add('active');
+        }
+
+        async function editAppointment(id) {
+            try {
+                const response = await fetch(`${API_URL}/appointments/${id}`, {
+                    headers: getAuthHeaders()
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    editingAppointmentId = id;
+                    document.getElementById('modalTitle').textContent = 'Edit Appointment';
+                    document.getElementById('appointmentId').value = id;
+                    document.getElementById('patientId').value = data.appointment.patient_id;
+                    document.getElementById('doctorId').value = data.appointment.doctor_id;
+                    document.getElementById('appointmentDate').value = data.appointment.date;
+                    document.getElementById('appointmentTime').value = data.appointment.time;
+                    document.getElementById('appointmentStatus').value = data.appointment.status;
+                    document.getElementById('appointmentModal').classList.add('active');
+                }
+            } catch (error) {
+                alert('Error loading appointment data');
+            }
+        }
+
+        async function handleSubmit(event) {
+            event.preventDefault();
+
+            const appointmentData = {
+                patient_id: parseInt(document.getElementById('patientId').value),
+                doctor_id: parseInt(document.getElementById('doctorId').value),
+                date: document.getElementById('appointmentDate').value,
+                time: document.getElementById('appointmentTime').value,
+                status: document.getElementById('appointmentStatus').value
+            };
+
+            try {
+                let response;
+                if (editingAppointmentId) {
+                    response = await fetch(`${API_URL}/appointments/${editingAppointmentId}`, {
+                        method: 'PUT',
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify(appointmentData)
+                    });
+                } else {
+                    response = await fetch(`${API_URL}/appointments`, {
+                        method: 'POST',
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify(appointmentData)
+                    });
+                }
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    closeModal();
+                    loadAppointments();
+                } else {
+                    document.getElementById('modalMessage').textContent = data.message || 'Operation failed';
+                    document.getElementById('modalMessage').className = 'message error';
+                }
+            } catch (error) {
+                document.getElementById('modalMessage').textContent = 'Error connecting to server';
+                document.getElementById('modalMessage').className = 'message error';
+            }
+        }
+
+        async function deleteAppointment(id) {
+            if (!confirm('Are you sure you want to delete this appointment?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/appointments/${id}`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+
+                if (response.ok) {
+                    loadAppointments();
+                } else {
+                    alert('Failed to delete appointment');
+                }
+            } catch (error) {
+                alert('Error connecting to server');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('appointmentModal').classList.remove('active');
+            document.getElementById('appointmentForm').reset();
+            document.getElementById('modalMessage').textContent = '';
+        }
+
+        // Load all data on page load
+        loadData();
+    </script>
+</body>
+</html>

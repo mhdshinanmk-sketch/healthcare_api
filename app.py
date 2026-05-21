@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 from database import init_db
 from routes.auth import auth_bp
 from routes.login import login_bp
@@ -7,6 +8,7 @@ from routes.users import users_bp
 from routes.patients import patients_bp
 from routes.appointments import appointments_bp
 from routes.doctors import doctors_bp
+
 # Create Flask application
 app = Flask(__name__)
 
@@ -19,9 +21,21 @@ app.register_blueprint(users_bp)
 app.register_blueprint(patients_bp)
 app.register_blueprint(appointments_bp)
 app.register_blueprint(doctors_bp)
+
+# Apply CORS AFTER blueprints with proper config
+CORS(app, resources={r"/*": {"origins": "*", "allow_headers": "*", "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]}})
+
 @app.route('/')
 def home():
     return "Healthcare API is running!"
+
+# Add CORS headers to all responses
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
+    return response
 
 if __name__ == '__main__':
     # Initialize the database (create tables if they don't exist)
